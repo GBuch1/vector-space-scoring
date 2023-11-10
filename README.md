@@ -1,4 +1,4 @@
-# falsify
+# Demo Code: falsify
 
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/whVWeVGo)
 # Assignment 3: Vector Space Query
@@ -29,7 +29,7 @@ score of two given vectors. For the Document class I implemented methods that fi
 the words in a given document in order to not skew ranking by only using the root word, and term frequency which returns how many
 times a given term occurs within a document. For the Corpus Class I implemented methods that compute a unique corpus as an indexed
 dictionary, checking if a term occurs in a list of words withing a doc, computing the document frequencies of every term in a document,
-computing a tf-idf vector for a document, and computing the tf-idf matrix for an entire corpus
+computing a tf-idf vector for a document, and computing the tf-idf matrix for an entire corpus. In regards to testing, I created three separate test files, one for each class. In each file I defined a setup method to create all of the variables that I would be using for my tests (Ex. self.vec1 = Vector([3, 2)). I then went through each method that I wrote code in within each class and wrote tests that ensured total coverage was achieved. The most common test I used was self.AssertEqual in order to test my method output against an expected output.
 
 ## Key Takeaways
 
@@ -38,6 +38,5 @@ was great because although it was still challenging I was able to figure things 
 possible solutions. In the context of my coding knowledge gained on this assignment, I feel much more comfortable implementing
 methods and referencing them within other functions. I also learned a ton about how to translate mathematical functions and equations
 into code as well as using trigonomic functions in the context of code. I also gained a lot of knowledge whist practicing implementation
-of while, and for loops, along with increased proficiency in if statements. I also feel like this is the first computer science assignment
-I have completed completely on my own that I can be super proud of. This assignment is really cool and I'm going to be showing it to
+of while, and for loops, along with increased proficiency in if statements. And of course I learned a ton about how to write tests for the code that I am writing which is a vital skill to have. I also feel like this is the first computer science assignment I have completed completely on my own that I can be super proud of. This assignment is really cool and I'm going to be showing it to
 everyone that I know haha.
