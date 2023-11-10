@@ -8,16 +8,22 @@ class TestDocument(unittest.TestCase):
         self.new_doc1 = Document(words=["freedom", "liberty", "justice"])
         self.new_doc2 = Document(words=["fleeing", "yelling", "crawled"])
         self.new_doc3 = Document(words=["taxes", "british", "gunfire", "taxes"])
+        self.new_doc5 = Document(words=["running", "jumping", "fleeing"])
 
     def test_filter_words(self):
-        exclude_words = {"freedom"}
-        self.new_doc1.filter_words(exclude_words)
+        exclude_words1 = {"freedom"}
+        exclude_words2 = {"gunfire"}
+        self.new_doc1.filter_words(exclude_words1)
         self.assertEqual(self.new_doc1.words, ["liberty", "justice"])
+        self.new_doc3.filter_words(exclude_words2)
+        self.assertEqual(self.new_doc3.words, ["taxes", "british", "taxes"])
 
     def test_stem_words(self):
-        stemmer = SnowballStemmer("english")
+        stemmer = SnowballStemmer(language='english')
         self.new_doc2.stem_words(stemmer)
         self.assertEqual(self.new_doc2.words, ["flee", "yell", "crawl"])
+        self.new_doc5.stem_words(stemmer)
+        self.assertEqual(self.new_doc5.words, ["run", "jump", "flee"])
 
     def test_term_frequency(self):
         self.assertEqual(self.new_doc3.tf("taxes"), 2)
