@@ -1,23 +1,27 @@
 """Abstract data type definitions for vector space model that supports
    cosine similarity queries using TF-IDF matrix built from the corpus.
 """
-
+import math
 import sys
 import concurrent.futures
 
 from math import sqrt, log10
 from typing import Callable, Iterable
 from nltk.stem import StemmerI
+from nltk.stem.snowball import SnowballStemmer
 
-__author__ = "Boaty McBoatface"
+__author__ = "Garrett Buchanan"
 __copyright__ = "Copyright 2023, Westmont College, Mike Ryu"
-__credits__ = ["Boaty McBoatface", "Mike Ryu"]
+__credits__ = ["Garrett Buchanan", "Mike Ryu"]
 __license__ = "MIT"
-__email__ = "mryu@westmont.edu"
+__email__ = "gbuchanan@westmont.edu"
 
 
 class Vector:
-    """TODO: Complete the class docstring for Vector. See Assignment 2's `orb_models.py for examples."""
+    """This class is used to create and manipulate vectors and calculate different values on them, such as computing
+       the euclidian norm of a vector, computing the dot product of two vectors, and calculating the cossimilarity of
+       two vectors."""
+
     def __init__(self, elements: list[float] | None = None):
         self._vec = elements if elements else []
 
@@ -53,22 +57,26 @@ class Vector:
         return f"Cannot compute {computation} with an instance that is not a DocumentVector: {instance}"
 
     def norm(self) -> float:
-        """TODO: Euclidean norm of the vector."""
-        return 0.0
+        """Computes Euclidean norm of the vector."""
+        return sqrt(sum([x ** 2 for x in self]))
 
     def dot(self, other: object) -> float:
-        """TODO: Dot product of `self` and `other` vectors."""
+        """Computes the Dot product of `self` and `other` vectors."""
         if not isinstance(other, Vector):
             raise ValueError(self._get_cannot_compute_msg("dot product", other))
         else:
-            return 0.0
+            return sum([v1 * v2 for v1, v2 in zip(self.vec, other.vec)])
 
     def cossim(self, other: object) -> float:
-        """TODO: Cosine similarity of `self` and `other` vectors."""
+        """Computes the Cosine similarity of `self` and `other` vectors."""
         if not isinstance(other, Vector):
             raise ValueError(self._get_cannot_compute_msg("cosine similarity", other))
         else:
-            return 0.0
+            denominator = (self.norm() * other.norm())  # create a variable for the denominator
+            if denominator:
+                return self.dot(other) / denominator
+            else:
+                return 0.0  # return 0.0 if there is no denominator because otherwise it would be undefined
 
     def boolean_intersect(self, other: object) -> list[tuple[float, float]]:
         """Returns a list of tuples of elements where both `self` and `other` had nonzero values."""
@@ -79,7 +87,9 @@ class Vector:
 
 
 class Document:
-    """TODO: Complete he class docstring for Document. See Assignment 2's `orb_models.py for examples.`"""
+    """This class creates a Document containing a title and a list of words. There are methods that allow for
+       things like filtration of a set of words, and stemming of words in a Document. There is also a method
+       that when given a term will the term frequency of that term in a Document."""
     _iid = 0
 
     def __init__(self, title: str = None, words: list[str] = None, processors: tuple[set[str], StemmerI] = None):
@@ -140,20 +150,47 @@ class Document:
         return self._words
 
     def filter_words(self, exclude_words: set[str]) -> None:
-        """TODO: Remove any words from `_words` that appear in `exclude_words` passed in."""
-        self._words = self._words
+        """Removes any words from `_words` that appear in `exclude_words` passed in."""
+        counter = 0
+        words = self._words
+        while counter < len(words):  # check that words isn't empty
+            if words[counter] in exclude_words:
+                words.remove(words[counter])
+                # if an item is removed don't advance counter because it shifts the index back one
+                counter += 0
+            else:
+                # if no item is removed advance the counter
+                counter += 1
 
     def stem_words(self, stemmer: StemmerI) -> None:
-        """TODO: Stem each word in `_words` using the `stemmer` passed in."""
-        self._words = self._words
+        """Stems each word in `_words` using SnowballStemmer that gets passed in."""
+        stemmer = SnowballStemmer(language='english')  # create a variable for the stemmer
+        stemmed_words = []  # create an empty list to append the stemmed word to
+        words = self._words
+        for word in words:
+            stem_word = stemmer.stem(word)  # stem the word using the SnowballStemmer
+            stemmed_words.append(stem_word)  # add the stemmed word to the stemmed words list
+        self._words = stemmed_words
 
     def tf(self, term: str) -> int:
-        """TODO: Compute and return the term frequency of the `term` passed in among `_words`."""
-        return 0
+        """Computes and return the term frequency of the `term` passed in among `_words`."""
+        counter = 0
+        words = self._words
+        # if not type None and if the word matches the term add 1 to the counter
+        if not None:
+            for word in words:
+                if word == term:
+                    counter += 1
+            return counter
 
 
 class Corpus:
-    """TODO: Complete he class docstring for Document. See Assignment 2's `orb_models.py for examples.`"""
+    """This Class creates a Corpus, which is a list of Documents, and uses the implemented methods
+       to perform tasks such as computing a unique, stemmed, and filtered corpus, computing the
+       document frequencies of a term, computing the document frequencies of all terms in a document
+       and returning an indexed dictionary, computing tf-idf score of a term in a document, computing
+       the tf-idf vector for a given document, and computing the tf-idf matrix for an entire corpus."""
+
     def __init__(self, documents: list[Document], threads=1, debug=False):
         self._docs: list[Document] = documents
 
@@ -195,8 +232,12 @@ class Corpus:
         return self._tf_idf
 
     def _compute_terms(self) -> dict[str, int]:
-        """TODO: Computes and returns the terms (unique, stemmed, and filtered words) of the corpus."""
-        return {}  # HINT: use self._build_index_dict(...)
+        """Computes and returns the terms (unique, stemmed, and filtered words) of the corpus."""
+        new_set = set()  # create a set so that values are unique
+        for document in self._docs:
+            new_set.update(document.words)  # update the set with the words in the current document
+        new_set = list(new_set)  # make the set into a list
+        return self._build_index_dict(new_set)  # return the list of words as an indexed dictionary
 
     def _compute_df(self, term) -> int:
         """Computes and returns the document frequency of the `term` in the context of this corpus (`self`)."""
@@ -205,7 +246,10 @@ class Corpus:
             sys.stdout.flush()
 
         def check_membership(t: str, doc: Document) -> bool:
-            """TODO: An efficient method to check if the term `t` occurs in a list of words `doc`."""
+            """An efficient method to check if the term `t` occurs in a list of words `doc`."""
+            for word in doc:
+                if word == t:
+                    return True
             return False
 
         return sum([1 if check_membership(term, doc) else 0 for doc in self._docs])
@@ -215,40 +259,38 @@ class Corpus:
         if self._threads > 1:
             return Corpus._compute_dict_multithread(self._threads, self._compute_df, self._terms.keys())
         else:
-            return {}  # HINT: Using dictionary comprehension makes this a single-liner.
+            return {term: self._compute_df(term) for term in self._terms.keys()}
 
     def _compute_tf_idf(self, term, doc=None, index=None):
-        """TODO: Computes and returns the TF-IDF score for the term and a given document.
+        """Computes and returns the TF-IDF score for the term and a given document.
 
         An arbitrary document may be passed in directly (`doc`) or be passed as an `index` within the corpus.
 
         """
         dfs = self._dfs
         doc = self._get_doc(doc, index)
-
-        # TODO: WRITE YOUR IMPLEMENTATION HERE.
-        # HINT: Use `dfs` declared above to eliminate redundant calculations.
-
-        return 0
+        if term in doc.words and len(self.docs) > 1:  # if a term is in a doc and not at end of doc
+            tf_idf = (math.log10(1 + doc.tf(term))) * (math.log10(len(self.docs) / (1 + dfs[term])))  # tf-idf formula
+            return tf_idf  # return score
+        else:
+            return 0.0  # if the term is not present in the doc, return a score of 0
 
     def compute_tf_idf_vector(self, doc=None, index=None) -> Vector:
         """Computes and returns the TF-IDF vector for the given document.
-
         An arbitrary document may be passed in directly (`doc`) or be passed as an `index` within the corpus.
-
         """
         doc = self._get_doc(doc, index)
-
-        # TODO: WRITE YOUR IMPLEMENTATION HERE.
-
-        return Vector()
+        tf_idf_list = []    # create a list to store tf-idf scores
+        for term in self._terms:
+            tf_idfs = self._compute_tf_idf(term, doc)   # compute the tf-idf for the current doc
+            tf_idf_list.append(tf_idfs)  # append the tf-idf score to the tf-idfs score list
+        return Vector(tf_idf_list)  # return the list as a vector
 
     def _compute_tf_idf_matrix(self) -> dict[str, Vector]:
         """Computes and returns the TF-IDF matrix for the whole corpus.
-
         The TF-IDF matrix is a dictionary of {document title: TF-IDF vector for the document}.
-
         """
+
         def tf_idf(document):
             if self._debug:
                 print(f"Processing '{document.title}'")
@@ -261,9 +303,8 @@ class Corpus:
             matrix = Corpus._compute_dict_multithread(self._threads, tf_idf, self._docs,
                                                       lambda d: d, lambda d: d.title)
         else:
-            for doc in self._docs:
-                # TODO: COMPLETE THIS LOOP BODY HERE.
-
+            for doc in self._docs:  # look at one doc at a time
+                matrix[doc.title] = self.compute_tf_idf_vector(doc, None)   # update the doc's title and tf-idf
                 if self._debug:
                     print(f"Done with doc {doc.title}")
         return matrix
@@ -285,7 +326,7 @@ class Corpus:
 
     @staticmethod
     def _compute_dict_multithread(num_threads: int, op: Callable, iterable: Iterable,
-                                  op_arg_func= lambda x: x, key_arg_func=lambda x: x) -> dict:
+                                  op_arg_func=lambda x: x, key_arg_func=lambda x: x) -> dict:
         """Experimental generic multithreading dispatcher and collector to parallelize dictionary construction.
 
         Args:
@@ -314,4 +355,3 @@ class Corpus:
     def _build_index_dict(lst: list) -> dict:
         """Given a list, returns a dictionary of {item from list: index of item}."""
         return {item: index for (index, item) in enumerate(lst)}
-
