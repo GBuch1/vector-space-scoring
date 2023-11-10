@@ -10,11 +10,12 @@ class TestCorpus(unittest.TestCase):
         self.new_doc3 = Document(title="doc3", words=["justice", "drugs", "oil"])
         self.new_doc4 = Document(title="doc4", words=["fleeing", "yelling", "crawled"])
         self.new_doc5 = Document(title="doc5", words=["running", "jumping", "fleeing"])
-        self.new_doc6 = Document(title="doc_test1", words=["running", "jumping"])
-        self.new_doc7 = Document(title="doc-test2", words=["running", "crying"])
+        self.new_doc6 = Document(title="doc_test1", words=["run", "jump"])
+        self.new_doc7 = Document(title="doc-test2", words=["run", "cry"])
+        self.new_doc8 = Document(title="doc_test3", words=["yell", "anger"])
         self.corpus1 = Corpus(documents=[self.new_doc1, self.new_doc2, self.new_doc4, self.new_doc5])
         self.corpus2 = Corpus(documents=[self.new_doc1, self.new_doc2, self.new_doc3])
-        self.corpus3 = Corpus(documents=[self.new_doc6, self.new_doc7])
+        self.corpus3 = Corpus(documents=[self.new_doc6, self.new_doc7, self.new_doc8])
 
     def test_compute_terms(self):
         terms = self.corpus1._compute_terms()
@@ -49,13 +50,17 @@ class TestCorpus(unittest.TestCase):
         self.assertAlmostEqual(test_value1[0], expected_value1[0])
 
     def test_compute_tf_idf_matrix(self):
-        # "running", "jumping"
-        # "running", "crying"
-        expected = {
-            "doc_test1": Vector([-0.05300875094999672, 0.0]),
-            "doc_test2": Vector([-0.05300875094999672, 0.0])}
-        computed = self.corpus3._compute_tf_idf_matrix()
-        self.assertEqual(expected, computed)
+        test_vec1 = self.corpus3.compute_tf_idf_vector(doc=self.new_doc6)
+        test_vec2 = self.corpus3.compute_tf_idf_vector(doc=self.new_doc7)
+        test_vec3 = self.corpus3.compute_tf_idf_vector(doc=self.new_doc8)
+
+        test_mat = {self.new_doc6.title: test_vec1, self.new_doc7.title: test_vec2,
+                    self.new_doc8.title: test_vec3}
+
+        expected_mat = self.corpus3._compute_tf_idf_matrix()
+
+        self.assertCountEqual(test_mat, expected_mat)
+
 
 if __name__ == '__main__':
     unittest.main()
